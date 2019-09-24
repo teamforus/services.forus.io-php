@@ -19,7 +19,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property integer $order
  * @property RecordType $record_type
  * @property RecordCategory $record_category
- * @property Collection $validations
+ * @property Collection|RecordValidation[] $validations
+ * @property Collection|RecordValidation[] $validations_approved
+ * @property Collection|RecordValidation[] $validations_declined
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @package App\Models
@@ -57,5 +59,23 @@ class Record extends Model
      */
     public function validations() {
         return $this->hasMany(RecordValidation::class);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function validations_approved() {
+        return $this->validations()->where([
+            'state' => RecordValidation::STATE_APPROVED
+        ]);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function validations_declined() {
+        return $this->validations()->where([
+            'state' => RecordValidation::STATE_APPROVED
+        ]);
     }
 }

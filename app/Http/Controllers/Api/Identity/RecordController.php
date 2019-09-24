@@ -15,7 +15,7 @@ class RecordController extends Controller
      * RecordCategoryController constructor.
      */
     public function __construct() {
-        $this->recordRepo = app()->make('forus.services.record');
+        $this->recordRepo = resolve('forus.services.record');
     }
 
     /**

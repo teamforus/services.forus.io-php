@@ -17,6 +17,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  * @property int $record_id
  * @property string $state
  * @property string $identity_address
+ * @property string $record_validation_uid
  * @property Identity $identity
  * @property Record $record
  * @property ProductRequest $product_request

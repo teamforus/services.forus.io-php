@@ -152,14 +152,18 @@ interface IRecordRepo {
     /**
      * Get identity records
      * @param string $identityAddress
-     * @param string|null $type
-     * @param integer|null $categoryId
-     * @return array
+     * @param null $type
+     * @param null $categoryId
+     * @param array $validators
+     * @param int|null $organization_id
+     * @return array|void|null
      */
     public function recordsList(
         string $identityAddress,
-        $type,
-        $categoryId
+        $type = null,
+        $categoryId = null,
+        array $validators = [],
+        int $organization_id = null
     );
 
     /**

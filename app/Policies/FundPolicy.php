@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Fund;
 use App\Models\FundCriterion;
 use App\Models\Organization;
+use App\Models\Product;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class FundPolicy
@@ -98,12 +99,14 @@ class FundPolicy
     /**
      * @param $identity_address
      * @param Fund $fund
+     * @param Product $product
      * @return bool
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
     public function apply(
         $identity_address,
-        Fund $fund
+        Fund $fund,
+        Product $product = null
     ) {
         if (empty($identity_address) && $fund->state != Fund::STATE_ACTIVE) {
             return false;
@@ -121,6 +124,16 @@ class FundPolicy
             $this->deny(trans('fund.already_received'));
         }*/
 
+        // TODO: Remove later
+        // For the demo, users can't have more than one product of one type
+        // from the same fund
+        if ($product && $fund->vouchers()->where([
+            'product_id' => $product->id,
+            'fund_id' => $fund->id
+        ])->count()) {
+            $this->deny(trans('fund.already_received_product'));
+        }
+
         // Check criteria
         $invalidCriteria = $fund->criteria->filter(function(
             FundCriterion $criterion
@@ -128,8 +141,14 @@ class FundPolicy
             $identity_address, $fund
         ) {
             $record = Fund::getTrustedRecordOfType(
-                $fund, auth()->id(), $criterion->record_type_key, $fund->organization
+                $fund, auth()->id(), $criterion->record_type_key
             );
+
+            logger()->debug(json_encode([
+                (collect([$record])->where(
+                    'value', $criterion->operator, $criterion->value
+                )), $record
+            ], JSON_PRETTY_PRINT));
 
             return (collect([$record])->where(
                 'value', $criterion->operator, $criterion->value

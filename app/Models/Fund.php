@@ -335,50 +335,26 @@ class Fund extends Model
      * @param Fund $fund
      * @param string $identity_address
      * @param string $recordType
-     * @param Organization|null $organization
      * @return mixed
      */
     public static function getTrustedRecordOfType(
         Fund $fund,
         string $identity_address,
-        string $recordType,
-        Organization $organization = null
+        string $recordType
     ) {
-        $recordRepo = app()->make('forus.services.record');
-
+        $recordRepo = resolve('forus.services.record');
         $trustedIdentities = $fund->validators->pluck(
             'identity_address'
-        );
+        )->toArray();
 
         /** @var FundCriterion $criterion */
         $recordsOfType = collect($recordRepo->recordsList(
-            $identity_address, $recordType, null
+            $identity_address, $recordType, null, $trustedIdentities, $fund->organization_id
         ));
 
-        $validRecordsOfType = $recordsOfType->map(function($record) use (
-            $trustedIdentities, $organization
-        ) {
-            $validations = collect($record['validations'])->whereIn(
-                'identity_address', $trustedIdentities);
-
-            if ($organization) {
-                $validations = collect()->merge($validations->where(
-                    'organization_id', $organization->id
-                ))->merge($validations->where(
-                    'organization_id', null
-                ));
-            }
-
-            return array_merge($record, [
-                'validations' => $validations->sortByDesc('created_at')
-            ]);
-        })->filter(function($record) {
-            return count($record['validations']) > 0;
-        })->sortByDesc(function($record) {
-            return $record['validations'][0]['created_at'];
-        });
-
-        return collect($validRecordsOfType)->first();
+        return $recordsOfType->sortByDesc(function($record) {
+            return strtotime($record['validations'][0]['created_at']);
+        })->first();
     }
 
     /**
@@ -401,8 +377,7 @@ class Fund extends Model
                     $record = self::getTrustedRecordOfType(
                         $fund,
                         $identityAddress,
-                        $formula->record_type_key,
-                        $fund->organization
+                        $formula->record_type_key
                     );
 
                     return is_numeric(

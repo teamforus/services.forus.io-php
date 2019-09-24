@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class RecordValidation extends Model
 {
+    const STATE_APPROVED = 'approved';
+    const STATE_DECLINED = 'declined';
+
     /**
      * The attributes that are mass assignable.
      *

@@ -8,6 +8,7 @@ use App\Services\Forus\Record\Models\RecordCategory;
 use App\Services\Forus\Record\Models\RecordType;
 use App\Services\Forus\Record\Models\RecordValidation;
 use App\Services\Forus\Record\Repositories\Interfaces\IRecordRepo;
+use Illuminate\Database\Eloquent\Builder;
 
 class RecordRepo implements IRecordRepo
 {
@@ -305,66 +306,79 @@ class RecordRepo implements IRecordRepo
     /**
      * Get identity records
      * @param string $identityAddress
-     * @param string|null $type
-     * @param integer|null $categoryId
-     * @return array
+     * @param null $type
+     * @param null $categoryId
+     * @param array $validators
+     * @param int|null $organization_id
+     * @return array|void|null
      */
     public function recordsList(
         string $identityAddress,
         $type = null,
-        $categoryId = null
+        $categoryId = null,
+        array $validators = [],
+        int $organization_id = null
     ) {
-
-        // Todo: validation state
-        $query = Record::query()->where([
-            'identity_address' => $identityAddress
-        ])->with([
-            'record_type'
-        ]);
+        $query = Record::where('identity_address', $identityAddress);
 
         if ($type) {
-            $recordType = RecordType::query()->where([
-                'key' => $type
-            ])->first();
+            $query->whereHas('record_type', function(
+                Builder $builder
+            ) use ($type) {
+                $builder->where('key', $type);
+            });
+        }
 
-            if ($recordType) {
-                $query->where('record_type_id', $recordType->id);
-            } else {
-                return null;
-            }
+        if (count($validators) > 0) {
+            $query->whereHas('validations_approved', function(
+                Builder $builder
+            ) use ($validators) {
+                $builder->whereIn('identity_address', $validators);
+            });
+        }
+
+        if ($organization_id) {
+            $query->whereHas('validations_approved', function(
+                Builder $builder
+            ) use ($organization_id) {
+                $builder->where(function(Builder $builder) use ($organization_id) {
+                    $builder->where(
+                        compact('organization_id')
+                    )->orWhereNull('organization_id');
+                });
+            });
         }
 
         if ($categoryId) {
             $query->where('record_category_id', $categoryId);
         }
 
+        $query->with([
+            'validations_approved',
+            'record_type'
+        ]);
+
         return $query->orderBy('order')->get()->map(function(
             Record $record
-        ) {
-            $validations = $record->validations()->where([
-                'state' => 'approved'
-            ])->select([
-                'state', 'identity_address', 'created_at', 'updated_at',
-                'organization_id'
-            ])->get()->load('organization')->map(function(
+        ) use ($validators) {
+            $record->validations = $record->validations_approved;
+            $record->validations = $record->validations->map(function(
                 RecordValidation $validation
             ) {
-                return $validation->setAttribute(
-                    'email',
-                    $validation->organization ? null :$this->primaryEmailByAddress(
-                        $validation->identity_address
-                    )
-                );
-            });
+                return collect($validation)->only([
+                    'state', 'identity_address', 'created_at', 'updated_at',
+                    'organization_id'
+                ])->toArray();
+            })->toArray();
 
             return [
                 'id' => $record->id,
                 'value' => $record->value,
                 'order' => $record->order,
-                'key' => $record->record_type->key,
-                'name' => $record->record_type->name,
+                'key' => $record['record_type']->key,
+                'name' => $record['record_type']->name,
                 'record_category_id' => $record->record_category_id,
-                'validations' => $validations
+                'validations' => $record->validations
             ];
         })->toArray();
     }
@@ -645,14 +659,12 @@ class RecordRepo implements IRecordRepo
             return false;
         }
 
-        $out = array_merge($validation->only([
+        return array_merge($validation->only([
             'state', 'identity_address', 'uuid'
         ]), $validation->record->only([
             'value'
         ]), $validation->record->record_type->only([
             'key', 'name'
         ]));
-
-        return $out;
     }
 }
