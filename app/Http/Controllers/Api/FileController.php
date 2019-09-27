@@ -72,7 +72,5 @@ class FileController extends Controller
     public function download(File $file)
     {
         return file_get_contents($file->urlPublic());
-
-        // return response()->download($file->urlPublic(), $file->original_name);
     }
 }

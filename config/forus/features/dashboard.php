@@ -15,6 +15,11 @@ return [
             'mustAcceptProducts' => false,
             'allowPrevalidations' => true,
             'allowValidationRequests' => false,
+
+            /**
+             * Sponsor may set/edit criteria from dashboard
+             */
+            'criteria' => env('FUND_CRITERIA_EDITABLE_BY_USER', false),
         ],
         "products" => [
             // list all funds

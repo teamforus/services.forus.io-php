@@ -144,12 +144,6 @@ class FundPolicy
                 $fund, auth()->id(), $criterion->record_type_key
             );
 
-            logger()->debug(json_encode([
-                (collect([$record])->where(
-                    'value', $criterion->operator, $criterion->value
-                )), $record
-            ], JSON_PRETTY_PRINT));
-
             return (collect([$record])->where(
                 'value', $criterion->operator, $criterion->value
                 )->count() == 0);

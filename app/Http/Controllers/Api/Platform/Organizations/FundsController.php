@@ -85,9 +85,9 @@ class FundsController extends Controller
             $fund->attachMedia($media);
         }
 
-        $fund->criteria()->createMany(
-            $request->input('criteria')
-        );
+        if (config('forus.features.dashboard.organizations.funds.criteria')) {
+            $fund->makeCriteria($request->input('criteria'));
+        }
 
         FundCreated::dispatch($fund);
 
@@ -157,10 +157,8 @@ class FundsController extends Controller
             $fund->attachMedia($media);
         }
 
-        foreach ($request->input('criteria') as $criterion) {
-            $fund->criteria()->where([
-                'id' => $criterion['id']
-            ])->update($criterion);
+        if (config('forus.features.dashboard.organizations.funds.criteria')) {
+            $fund->updateCriteria($request->input('criteria'));
         }
 
         return new FundResource($fund);

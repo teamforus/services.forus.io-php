@@ -2,13 +2,9 @@
 
 namespace App\Http\Controllers\Api\Platform\Validator;
 
-use App\Events\Vouchers\VoucherCreated;
 use App\Http\Requests\Api\Platform\Validator\ValidatorRequest\ValidateValidatorRequestRequest;
 use App\Http\Resources\Validator\ValidatorRequestResource;
-use App\Mail\Funds\Forus\ProductRequestRejectedCriteriaMail;
-use App\Mail\Funds\Forus\ProductRequestRejectedMail;
 use App\Models\ValidatorRequest;
-use App\Models\Voucher;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 

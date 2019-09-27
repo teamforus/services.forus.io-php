@@ -12,7 +12,7 @@ use App\Mail\Funds\ProductAddedMail;
 use App\Mail\Funds\ProviderAppliedMail;
 use App\Mail\Funds\ProviderApprovedMail;
 use App\Mail\Funds\ProviderRejectedMail;
-use App\Mail\Funds\Forus\ProductRequestRejectedMail as ForusFundCreated;
+use App\Mail\Funds\Forus\FundCreatedMail as ForusFundCreated;
 use App\Mail\User\EmailActivationMail;
 use App\Mail\Validations\AddedAsValidatorMail;
 use App\Mail\Validations\NewValidationRequestMail;
