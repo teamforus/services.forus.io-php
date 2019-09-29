@@ -50,6 +50,16 @@ class RecordController extends Controller
     }
 
     /**
+     * Validate records store request
+     * @param RecordStoreRequest $request
+     * @return string
+     */
+    public function storeValidate(RecordStoreRequest $request)
+    {
+        return '';
+    }
+
+    /**
      * Get record
      * @param int $recordId
      * @return array
