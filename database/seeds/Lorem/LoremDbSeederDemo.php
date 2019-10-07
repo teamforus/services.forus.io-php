@@ -118,13 +118,13 @@ class LoremDbSeederDemo extends Seeder
      */
     public function makeProviders(
         string $identity_address,
-        int $count = 10
+        int $count = 1
     ) {
         $organizations = $this->makeOrganizations($identity_address, $count);
 
         foreach ($organizations as $index => $organization) {
-            $this->makeOffices($organization, rand(1, 2));
-            $this->makeProducts($organization, rand(5, 10));
+            $this->makeOffices($organization, 1);
+            $this->makeProducts($organization, 1);
         }
 
         foreach (Fund::get() as $fund) {
@@ -153,7 +153,7 @@ class LoremDbSeederDemo extends Seeder
                     2 => 'approved',
                     3 => 'approved',
                     4 => 'declined',
-                ][rand(0, 4)]
+                ][3]
             ]);
         }
     }
@@ -174,7 +174,7 @@ class LoremDbSeederDemo extends Seeder
 
         while ($count-- > 0) {
             array_push($out, $this->makeOrganization(
-                'Provider #' . $nth++,
+                'Optisport',
                 $identity_address,
                 $fields
             ));
@@ -285,11 +285,11 @@ class LoremDbSeederDemo extends Seeder
         $implementation = Implementation::create([
             'key' => $key,
             'name' => $name,
-            'url_webshop'   => "https://dev.$key.forus.io/#!/",
-            'url_sponsor'   => "https://dev.$key.forus.io/sponsor/#!/",
-            'url_provider'  => "https://dev.$key.forus.io/provider/#!/",
-            'url_validator' => "https://dev.$key.forus.io/validator/#!/",
-            'url_app'       => "https://dev.$key.forus.io/me/#!/",
+            'url_webshop'   => "https://demo.$key.forus.io/#!/",
+            'url_sponsor'   => "https://demo.$key.forus.io/sponsor/#!/",
+            'url_provider'  => "https://demo.$key.forus.io/provider/#!/",
+            'url_validator' => "https://demo.$key.forus.io/validator/#!/",
+            'url_app'       => "https://demo.$key.forus.io/me/#!/",
         ]);
 
         return $implementation;
@@ -319,18 +319,19 @@ class LoremDbSeederDemo extends Seeder
      * @param Organization $organization
      * @param array $fields
      * @return Product
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     public function makeProduct(
         Organization $organization,
         array $fields = []
     ) {
         do {
-            $name = 'Product #' . rand(100000, 999999);
+            $name = 'Zwemzomerabonnement';
         } while(Product::query()->where('name', $name)->count() > 0);
 
-        $price = rand(1, 20);
-        $old_price = rand($price, 50);
-        $total_amount = rand(1, 10) * 10;
+        $price = 20;
+        $old_price = 20;
+        $total_amount = 100;
         $sold_out = false;
         $expire_at = Carbon::now()->addDays(rand(20, 60));
         $product_category_id = $this->productCategories->pluck('id')->random();
@@ -345,6 +346,25 @@ class LoremDbSeederDemo extends Seeder
                 'expire_at'
             ]))->toArray()
         );
+
+        $mediaService = resolve('media');
+        $fileName = 'lorem';
+        $categoryName = 'lorem';
+
+        try {
+            if (env('DB_SEED_IMAGES', true)) {
+                $product->attachMedia($mediaService->uploadSingle(
+                    new \Illuminate\Http\UploadedFile(
+                        database_path(
+                            '/seeds/resources/products/' . str_slug($categoryName) . '/' . str_slug($fileName) . '.jpg'
+                        ), $fileName
+                    ), 'product_photo',
+                    $organization->identity_address
+                ));
+            }
+        } catch (Exception $exception) {
+            $this->success($exception);
+        };
 
         return $product;
     }
