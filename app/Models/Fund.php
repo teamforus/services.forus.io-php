@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Events\Vouchers\VoucherCreated;
-use App\Models\Traits\EloquentModel;
 use App\Services\BunqService\BunqService;
 use App\Services\Forus\EthereumWallet\Traits\HasEthereumWallet;
+use App\Services\FileService\Models\File;
 use App\Services\Forus\Notification\NotificationService;
 use App\Services\Forus\Record\Repositories\RecordRepo;
 use App\Services\MediaService\Models\Media;
@@ -15,12 +15,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
+
 /**
- * Class Fund
- * @property mixed $id
- * @property integer $organization_id
- * @property integer|null $fund_id
- * @property string $state
+ * App\Models\Fund
+ *
+ * @property int $id
+ * @property int $organization_id
  * @property string $name
  * @property float $budget_total
  * @property float $budget_validated
@@ -60,7 +60,6 @@ class Fund extends Model
 
     const CURRENCY_ETHER = 'eth';
     const CURRENCY_EUR = 'eur';
-
     const STATE_ACTIVE = 'active';
     const STATE_CLOSED = 'closed';
     const STATE_PAUSED = 'paused';
@@ -194,6 +193,13 @@ class Fund extends Model
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function fund_requests() {
+        return $this->hasMany(FundRequest::class);
+    }
+
+    /**
      * @return float
      */
     public function getBudgetValidatedAttribute() {
@@ -309,6 +315,36 @@ class Fund extends Model
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function employees() {
+        return $this->hasManyThrough(
+            Employee::class,
+            Organization::class,
+            'id',
+            'organization_id',
+            'organization_id',
+            'id'
+        );
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function employees_validators() {
+        return $this->hasManyThrough(
+            Employee::class,
+            Organization::class,
+            'id',
+            'organization_id',
+            'organization_id',
+            'id'
+        )->whereHas('roles', function(Builder $builder) {
+            $builder->where('key', 'validation');
+        });
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function fund_config() {
@@ -368,9 +404,7 @@ class Fund extends Model
     ) {
         $recordRepo = app()->make('forus.services.record');
 
-        $trustedIdentities = $fund->validators->pluck(
-            'identity_address'
-        );
+        $trustedIdentities = $fund->validatorIdentities();
 
         /** @var FundCriterion $criterion */
         $recordsOfType = collect($recordRepo->recordsList(
@@ -765,11 +799,11 @@ class Fund extends Model
     }
 
     /**
-     * @param string $identity_address
+     * @param string|null $identity_address
      * @param float|null $amount
      * @param Carbon|null $expire_at
      * @param string|null $note
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return Voucher|\Illuminate\Database\Eloquent\Model
      */
     public function makeVoucher(
         string $identity_address = null,
@@ -779,13 +813,103 @@ class Fund extends Model
     ) {
         $amount = $amount ?: self::amountForIdentity($this, $identity_address);
         $expire_at = $expire_at ?: $this->end_date;
+        $fund_id = $this->id;
 
-        $voucher = $this->vouchers()->create(compact(
-            'identity_address', 'amount', 'expire_at', 'note'
+        $voucher = Voucher::create(compact(
+            'identity_address', 'amount', 'expire_at', 'note', 'fund_id'
         ));
 
         VoucherCreated::dispatch($voucher);
 
         return $voucher;
+    }
+
+    /**
+     * @param bool $force_fetch
+     * @return array
+     */
+    public function validatorIdentities(bool $force_fetch = true) {
+        return (
+            $force_fetch ? $this->validators() : $this->validators
+        )->pluck('validators.identity_address')->toArray();
+    }
+
+    /**
+     * @param bool $force_fetch
+     * @return array
+     */
+    public function validatorEmployees(bool $force_fetch = true) {
+        return ($force_fetch ? $this->employees_validators() :
+            $this->employees_validators)
+            ->pluck('employees.identity_address')->toArray();
+    }
+
+    /**
+     * @param string $identity_address
+     * @param array $records
+     * @return FundRequest
+     */
+    public function makeFundRequest(string $identity_address, array $records)
+    {
+        /** @var FundRequest $fundRequest */
+        $fundRequest = $this->fund_requests()->create(compact(
+            'identity_address'
+        ));
+
+        foreach ($records as $record) {
+            /** @var FundRequestRecord $requestRecord */
+            $requestRecord = $fundRequest->records()->create($record);
+
+            foreach ($record['files'] ?? [] as $fileUid) {
+                $requestRecord->attachFile(File::findByUid($fileUid));
+            }
+        }
+
+        return $fundRequest;
+    }
+
+    /**
+     * Store criteria for newly created fund
+     * @param array $criteria
+     * @return $this
+     */
+    public function makeCriteria(array $criteria)
+    {
+        $this->criteria()->createMany(array_map(function($criterion) {
+            return array_only($criterion, [
+                'record_type_key', 'operator', 'value'
+            ]);
+        }, $criteria));
+
+        return $this;
+    }
+
+    /**
+     * Update criteria for existing fund
+     * @param array $criteria
+     * @return $this
+     */
+    public function updateCriteria(array $criteria)
+    {
+        $this->criteria()->whereNotIn('id', array_filter(
+            array_pluck($criteria, 'id'), function($id) {
+            return !empty($id);
+        }
+        ))->delete();
+
+        foreach ($criteria as $criterion) {
+            /** @var FundCriterion|null $db_criteria */
+            $data_criteria = array_only($criterion, [
+                'record_type_key', 'operator', 'value'
+            ]);
+
+            if ($db_criteria = $this->criteria()->find($criterion['id'] ?? null)) {
+                $db_criteria->update($data_criteria);
+            } else {
+                $this->criteria()->create($data_criteria);
+            }
+        }
+
+        return $this;
     }
 }

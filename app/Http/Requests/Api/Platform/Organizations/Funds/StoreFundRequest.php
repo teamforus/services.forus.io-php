@@ -26,7 +26,25 @@ class StoreFundRequest extends FormRequest
     {
         $start_after = now()->addDays(5)->format('Y-m-d');
         $currencies = implode(',', Fund::CURRENCIES);
+        $criteriaEditable = config('forus.features.dashboard.organizations.funds.criteria');
 
+        return array_merge([
+            'name'                          => 'required|between:2,200',
+            'start_date'                    => 'required|date_format:Y-m-d|after:' . $start_after,
+            'end_date'                      => 'required|date_format:Y-m-d|after:start_date',
+            'product_categories'            => 'present|array',
+            'product_categories.*'          => 'exists:product_categories,id',
+            'notification_amount'           => 'nullable|numeric',
+        ], $criteriaEditable ? [
+            'criteria'                      => 'required|array',
+            'criteria.*.operator'           => 'required|in:=,<,>',
+            'criteria.*.record_type_key'    => 'required|exists:record_types,key',
+            'criteria.*.value'              => 'required|string|between:1,10',
+        ] : []);
+    }
+
+    public function attributes()
+    {
         return [
             'name'                  => 'required|between:2,200',
             'start_date'            => 'required|date_format:Y-m-d|after:' . $start_after,
@@ -35,6 +53,7 @@ class StoreFundRequest extends FormRequest
             'product_categories.*'  => 'exists:product_categories,id',
             'notification_amount'   => 'nullable|numeric',
             'currency'              => 'required|in:' . $currencies,
+            'criteria.*.value' => 'Waarde'
         ];
     }
 }
