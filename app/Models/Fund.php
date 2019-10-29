@@ -56,7 +56,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  */
 class Fund extends Model
 {
-    use HasMedia, HasEthereumWallet, EloquentModel;
+    use HasMedia, HasEthereumWallet;
 
     const CURRENCY_ETHER = 'eth';
     const CURRENCY_EUR = 'eur';

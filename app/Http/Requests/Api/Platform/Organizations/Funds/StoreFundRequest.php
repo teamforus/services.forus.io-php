@@ -35,7 +35,8 @@ class StoreFundRequest extends FormRequest
             'product_categories'            => 'present|array',
             'product_categories.*'          => 'exists:product_categories,id',
             'notification_amount'           => 'nullable|numeric',
-        ], $criteriaEditable ? [
+            'currency'              => 'required|in:' . $currencies,
+         ], $criteriaEditable ? [
             'criteria'                      => 'required|array',
             'criteria.*.operator'           => 'required|in:=,<,>',
             'criteria.*.record_type_key'    => 'required|exists:record_types,key',
@@ -45,14 +46,7 @@ class StoreFundRequest extends FormRequest
 
     public function attributes()
     {
-        return [
-            'name'                  => 'required|between:2,200',
-            'start_date'            => 'required|date_format:Y-m-d|after:' . $start_after,
-            'end_date'              => 'required|date_format:Y-m-d|after:start_date',
-            'product_categories'    => 'present|array',
-            'product_categories.*'  => 'exists:product_categories,id',
-            'notification_amount'   => 'nullable|numeric',
-            'currency'              => 'required|in:' . $currencies,
+       return [
             'criteria.*.value' => 'Waarde'
         ];
     }

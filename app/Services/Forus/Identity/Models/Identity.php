@@ -40,6 +40,7 @@ use App\Services\Forus\EthereumWallet\Traits\HasEthereumWallet;
  */
 class Identity extends Model
 {
+    use HasEthereumWallet;
     /**
      * The attributes that are mass assignable.
      *

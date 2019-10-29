@@ -3,13 +3,10 @@
 namespace App\Services\Forus\EthereumWallet\Models;
 
 use App\Models\Fund;
-use App\Models\Traits\EloquentModel;
 use App\Models\VoucherTransaction;
 use App\Services\Forus\EthereumWallet\Repositories\Interfaces\IEthereumWalletRepo;
 use App\Services\Forus\EthereumWallet\Traits\HasEthereumWallet;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -26,7 +23,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EthereumWallet extends Model
 {
-    use EloquentModel;
 
     /**
      * The attributes that are mass assignable.
