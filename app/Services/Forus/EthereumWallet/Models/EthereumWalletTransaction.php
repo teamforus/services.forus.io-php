@@ -2,8 +2,6 @@
 
 namespace App\Services\Forus\EthereumWallet\Models;
 
-use App\Models\Traits\EloquentModel;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,7 +22,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class EthereumWalletTransaction extends Model
 {
-    use EloquentModel;
 
     /**
      * The attributes that are mass assignable.
