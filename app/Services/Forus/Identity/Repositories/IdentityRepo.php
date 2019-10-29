@@ -34,10 +34,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param Identity $model
      * @param IRecordRepo $recordRepo
      */
-    public function __construct(
-        Identity $model,
-        IRecordRepo $recordRepo
-    ) {
+    public function __construct(Identity $model, IRecordRepo $recordRepo)
+    {
         $this->model = $model;
         $this->recordRepo = $recordRepo;
     }
@@ -49,11 +47,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @throws \Exception
      * @return mixed
      */
-    public function make(
-        string $pinCode,
-        array $records = []
-    ) {
-        /** @var Identity $identity */
+    public function make(string $pinCode, array $records = [])
+    {
         $identity = $this->model->create(collect(
             app('key_pair_generator')->make()
         )->merge([
@@ -91,15 +86,29 @@ class IdentityRepo implements Interfaces\IIdentityRepo
     }
 
     /**
+     * @param $email
+     * @return mixed|null
+     * @throws \Exception
+     */
+    public function getOrMakeByEmail($email)
+    {
+        if (!$email || empty($email)) {
+            return null;
+        }
+
+        $address = $this->recordRepo->identityAddressByEmail($email);
+        return $address ?: $this->makeByEmail($email);
+    }
+
+    /**
      * Create new proxy for given identity
      *
      * @param string $identity
      * @return array|\Illuminate\Support\Collection
      * @throws \Exception
      */
-    public function makeIdentityPoxy(
-        $identity
-    ) {
+    public function makeIdentityPoxy($identity)
+    {
         return $this->makeProxy('confirmation_code', $identity);
     }
 
@@ -109,9 +118,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return mixed
      * @throws \Exception
      */
-    public function getProxyAccessToken(
-        $proxyIdentityId
-    ) {
+    public function getProxyAccessToken($proxyIdentityId)
+    {
         if (!$proxyIdentity = IdentityProxy::find($proxyIdentityId)) {
             throw new \Exception(
                 trans('identity.exceptions.unknown_identity')
@@ -126,9 +134,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param string $access_token
      * @return mixed
      */
-    public function proxyIdByAccessToken(
-        string $access_token = null
-    ) {
+    public function proxyIdByAccessToken(string $access_token = null)
+    {
         $proxyIdentity = IdentityProxy::findByAccessToken($access_token);
 
         return $proxyIdentity ? $proxyIdentity->id : null;
@@ -139,9 +146,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param mixed $proxyIdentityId
      * @return string
      */
-    public function identityAddressByProxyId(
-        $proxyIdentityId = null
-    ) {
+    public function identityAddressByProxyId($proxyIdentityId = null)
+    {
         $proxyIdentity = IdentityProxy::find($proxyIdentityId);
 
         if ($proxyIdentity && $proxyIdentity->identity) {
@@ -156,9 +162,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param mixed $proxyIdentityId
      * @return mixed
      */
-    public function proxyStateById(
-        $proxyIdentityId = null
-    ) {
+    public function proxyStateById($proxyIdentityId = null)
+    {
         return IdentityProxy::find($proxyIdentityId)->state ?? null;
     }
 
@@ -168,9 +173,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return mixed|void
      * @throws \Exception
      */
-    public function destroyProxyIdentity(
-        $proxyIdentityId
-    ) {
+    public function destroyProxyIdentity($proxyIdentityId)
+    {
         IdentityProxy::find($proxyIdentityId)->delete();
     }
 
@@ -179,7 +183,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return bool
      * @throws \Exception
      */
-    public function hasPinCode($proxyIdentityId) {
+    public function hasPinCode($proxyIdentityId)
+    {
         if (!$proxyIdentity = IdentityProxy::find($proxyIdentityId)) {
             throw new \Exception(
                 trans('identity.exceptions.unknown_identity')
@@ -195,10 +200,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return bool
      * @throws \Exception
      */
-    public function cmpPinCode(
-        $proxyIdentityId,
-        $pinCode
-    ) {
+    public function cmpPinCode($proxyIdentityId, $pinCode)
+    {
         if (!$proxyIdentity = IdentityProxy::find($proxyIdentityId)) {
             throw new \Exception(
                 trans('identity.exceptions.unknown_identity')
@@ -246,7 +249,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return int|string
      * @throws \Exception
      */
-    private function uniqExchangeToken($type) {
+    private function uniqExchangeToken($type)
+    {
         do {
             switch ($type) {
                 case "qr_code": $token = $this->makeToken(64); break;
@@ -329,7 +333,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return Identity|array|\Illuminate\Database\Eloquent\Model
      * @throws \Exception
      */
-    public function makeAuthorizationCodeProxy() {
+    public function makeAuthorizationCodeProxy()
+    {
         return $this->makeProxy('pin_code');
     }
 
@@ -339,7 +344,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return array
      * @throws \Exception
      */
-    public function makeAuthorizationTokenProxy() {
+    public function makeAuthorizationTokenProxy()
+    {
         return $this->makeProxy('qr_code');
     }
 
@@ -349,7 +355,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @return array
      * @throws \Exception
      */
-    public function makeAuthorizationShortTokenProxy() {
+    public function makeAuthorizationShortTokenProxy()
+    {
         return $this->makeProxy('short_token');
     }
 
@@ -413,9 +420,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param string $token
      * @return bool|mixed
      */
-    public function exchangeAuthorizationShortTokenProxy(
-        string $token
-    ) {
+    public function exchangeAuthorizationShortTokenProxy(string $token)
+    {
         $proxy = $this->proxyByExchangeToken($token, 'short_token');
 
         if (!$proxy) {
@@ -435,9 +441,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param string $token
      * @return string
      */
-    public function activateAuthorizationEmailProxy(
-        string $token
-    ) {
+    public function activateAuthorizationEmailProxy(string $token)
+    {
         return $this->exchangeToken('email_code', $token)->access_token;
     }
 
@@ -447,9 +452,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param string $token
      * @return string
      */
-    public function exchangeEmailConfirmationToken(
-        string $token
-    ) {
+    public function exchangeEmailConfirmationToken(string $token)
+    {
         return $this->exchangeToken('confirmation_code', $token)->access_token;
     }
 
@@ -459,9 +463,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param string $token
      * @return string
      */
-    public function exchangeQrCodeToken(
-        string $token
-    ) {
+    public function exchangeQrCodeToken(string $token)
+    {
         return $this->exchangeToken('qr_code', $token)->access_token;
     }
 
@@ -470,7 +473,8 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param $type
      * @return IdentityProxy
      */
-    private function proxyByExchangeToken($exchange_token, $type) {
+    private function proxyByExchangeToken($exchange_token, $type)
+    {
         return IdentityProxy::query()->where([
             'exchange_token'    => $exchange_token,
             'type'              => $type
@@ -516,14 +520,16 @@ class IdentityRepo implements Interfaces\IIdentityRepo
      * @param $size
      * @return string
      */
-    private function makeToken($size) {
+    private function makeToken($size)
+    {
         return app('token_generator')->generate($size);
     }
 
     /**
      * @return string
      */
-    private function makeAccessToken() {
+    private function makeAccessToken()
+    {
         return $this->makeToken(200);
     }
 
