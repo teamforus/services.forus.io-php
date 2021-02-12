@@ -646,7 +646,7 @@ class NotificationService
                 rtrim(Implementation::active()['url_sponsor'], '/'),
                 'preferences/notifications');
 
-            $implementationKey = Implementation::active();
+            $implementationKey = Implementation::activeKey();
 
             /** @var Queueable|Mailable $message */
             $message = $mailable->with(compact(
