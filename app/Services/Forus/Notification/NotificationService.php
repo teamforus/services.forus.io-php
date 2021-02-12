@@ -646,9 +646,11 @@ class NotificationService
                 rtrim(Implementation::active()['url_sponsor'], '/'),
                 'preferences/notifications');
 
+            $implementationKey = Implementation::active();
+
             /** @var Queueable|Mailable $message */
             $message = $mailable->with(compact(
-                'email', 'unsubscribeLink', 'notificationPreferencesLink'
+                'email', 'unsubscribeLink', 'notificationPreferencesLink', 'implementationKey'
             ));
 
             $message = $message->onQueue(config(
