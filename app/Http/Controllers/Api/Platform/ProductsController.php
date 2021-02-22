@@ -6,6 +6,7 @@ use App\Http\Requests\Api\Platform\SearchProductsRequest;
 use App\Http\Resources\Requester\ProductResource;
 use App\Models\Product;
 use App\Http\Controllers\Controller;
+use App\Scopes\Builders\ProductQuery;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -69,6 +70,8 @@ class ProductsController extends Controller
      */
     public function show(Product $product): ProductResource {
         $this->authorize('showPublic', $product);
+
+        $product = ProductQuery::addPriceMinAndMaxColumn(Product::whereId($product->id))->firstOrFail();
 
         return new ProductResource($product->load(ProductResource::$load));
     }
