@@ -13,17 +13,17 @@ use Illuminate\Mail\Mailable;
 class FundClosed extends ImplementationMail
 {
     private $fundName;
+    private $fundEndDate;
     private $fundContact;
     private $sponsorName;
     private $link;
-
-    public $communicationType;
 
     /**
      * Create a new message instance.
      *
      * FundClosed constructor.
      * @param string $fundName
+     * @param $fundEndDate
      * @param $fundContact
      * @param $sponsor_name
      * @param $link
@@ -31,6 +31,7 @@ class FundClosed extends ImplementationMail
      */
     public function __construct(
         string $fundName,
+        $fundEndDate,
         $fundContact,
         $sponsor_name,
         $link,
@@ -40,6 +41,7 @@ class FundClosed extends ImplementationMail
 
         $this->fundName     = $fundName;
         $this->link         = $link;
+        $this->fundEndDate  = $fundEndDate;
         $this->fundContact  = $fundContact;
         $this->sponsorName  = $sponsor_name;
     }
@@ -60,6 +62,7 @@ class FundClosed extends ImplementationMail
             ->view('emails.funds.fund_closed', [
                 'sponsor_name'  => $this->sponsorName,
                 'fund_name'     => $this->fundName,
+                'fund_end_date' => $this->fundEndDate,
                 'fund_contact'  => $this->fundContact,
                 'webshop_link'  => $this->link
             ]);
